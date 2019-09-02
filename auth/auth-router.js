@@ -25,8 +25,31 @@ router.post('/register', async (req, res) => {
   }
 });
 
-router.post('/login', (req, res) => {
-  // implement login
+router.post('/login', async (req, res) => {
+  req.session.isAuthenticated = false
+  const { username, password } = req.body
+  if (!username || !password) {
+    return res.status(400).json({
+      error: 'username and password are mandatory DUDE!'
+    })
+  }
+  try {
+    // get user from db by username
+    const [user] = await db('users').where({ username })
+    // use compareSync to check if password matches the stored hashed password
+    if (user && bcrypt.compareSync(password, user.password)) {
+      req.session.isAuthenticated = true
+      return res.status(200).end()
+    } else {
+      return res.status(401).json({
+        error: 'Wrong username or password DUDE!'
+      })
+    }
+  } catch (error) {
+    res.status(500).json({
+      error: error.message
+    })
+  }
 });
 
 module.exports = router;
